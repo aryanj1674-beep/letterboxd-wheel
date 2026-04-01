@@ -1,6 +1,8 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
+## to upload your CSV File, go to letterboxd -> then setting -> then advanced settings-> you will find an option to export data, upload that to the site and you'll be able to see your watchlist
+## Added an option to choose from top500 movies if you want
 
 First, run the development server:
 

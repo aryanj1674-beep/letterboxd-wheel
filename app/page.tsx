@@ -490,7 +490,7 @@ export default function Home() {
           {wheelData.length > 0 ? (
             <>
               <div
-                className="mb-8 border-8 border-[#1c2228] rounded-full shadow-2xl group w-full max-w-[600px] mx-auto relative cursor-crosshair"
+                className="mb-8 border-8 border-[#1c2228] rounded-full shadow-2xl group w-full max-w-[400px] relative"
                 onMouseMove={handleWheelMouseMove}
                 onMouseLeave={handleWheelMouseLeave}
               >
@@ -504,7 +504,7 @@ export default function Home() {
                     textColors={['#ffffff']}
                     outerBorderColor="#14181c"
                     outerBorderWidth={5}
-                    fontSize={8}
+                    fontSize={10}
                     textDistance={88}
                   />
                   {hoveredWheelIndex !== null && chosenMovies[hoveredWheelIndex] && !mustSpin && (
