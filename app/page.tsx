@@ -397,11 +397,11 @@ export default function Home() {
     let offset = 23; 
     
     if (poolType === 'watchlist') {
-      offset = 23*wheelData.length/100;   // <--- CHANGE THIS NUMBER for Watchlist (e.g. 1, 2, 5, etc)
+      offset = 25*wheelData.length/100;   // <--- CHANGE THIS NUMBER for Watchlist (e.g. 1, 2, 5, etc)
     } else if (poolType === 'top500') {
-      offset = 23;  // <--- CHANGE THIS NUMBER for Top 500
+      offset = 25;  // <--- CHANGE THIS NUMBER for Top 500
     } else if (poolType === 'both') {
-      offset = 23;  // <--- CHANGE THIS NUMBER for Both
+      offset = 25;  // <--- CHANGE THIS NUMBER for Both
     }
     
     // Applying the calibration
