@@ -23,6 +23,7 @@ export async function GET(request: Request) {
     
     // Scrape poster parsing Letterboxd's LD+JSON
     let posterUrl = '';
+    let genre = 'N/A';
     const scriptContent = $('script[type="application/ld+json"]').html();
     if (scriptContent) {
       // Strip out the CDATA comments so we can parse it
@@ -31,6 +32,9 @@ export async function GET(request: Request) {
         const data = JSON.parse(cleanJson);
         if (data && data.image) {
           posterUrl = data.image; // this gets the perfect portrait poster
+        }
+        if (data && data.genre) {
+          genre = Array.isArray(data.genre) ? data.genre.slice(0, 2).join(', ') : data.genre;
         }
       } catch (e) {
         console.error("Failed to parse LD+JSON:", e);
@@ -49,10 +53,18 @@ export async function GET(request: Request) {
       rating = rawRating.split(' ')[0] + ' ⭐'; // "4.18 ⭐"
     }
 
+    // Scrape runtime from DOM
+    let runtime = 'N/A';
+    const runtimeP = $('.text-link.text-footer').text();
+    const runtimeMatch = runtimeP.match(/(\d+)\s*mins?/i);
+    if (runtimeMatch) runtime = runtimeMatch[0];
+
     return NextResponse.json({
       slug,
       posterUrl,
-      rating
+      rating,
+      genre,
+      runtime
     });
   } catch (err: any) {
     console.error("Error fetching movie data:", err.message);

@@ -16,7 +16,7 @@ interface Movie {
 }
 
 function MovieRosterItem({ movie }: { movie: Movie }) {
-  const [data, setData] = useState<{ posterUrl: string, rating: string } | null>(null);
+  const [data, setData] = useState<{ posterUrl: string, rating: string, genre?: string, runtime?: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -27,7 +27,7 @@ function MovieRosterItem({ movie }: { movie: Movie }) {
         .then(r => r.json())
         .then(json => {
           if (!json.error) {
-            setData({ posterUrl: json.posterUrl, rating: json.rating });
+            setData({ posterUrl: json.posterUrl, rating: json.rating, genre: json.genre, runtime: json.runtime });
           }
         })
         .finally(() => setLoading(false));
@@ -61,6 +61,11 @@ function MovieRosterItem({ movie }: { movie: Movie }) {
               <div className="bg-[#14181c] px-3 py-1 rounded-full text-[#ff8000] text-xs font-black tracking-widest mt-3 border border-[#2c3440]">
                 {data.rating && data.rating !== 'N/A' ? data.rating : 'UNRATED'}
               </div>
+              {data.genre && data.genre !== 'N/A' && (
+                <div className="text-[9px] text-[#8aa8c1] font-bold uppercase tracking-widest mt-2 px-1 text-center leading-tight">
+                  {data.genre} • {data.runtime}
+                </div>
+              )}
             </>
           )}
         </div>
@@ -70,7 +75,7 @@ function MovieRosterItem({ movie }: { movie: Movie }) {
 }
 
 function FloatingWheelTooltip({ movie }: { movie: Movie }) {
-  const [data, setData] = useState<{ posterUrl: string, rating: string } | null>(null);
+  const [data, setData] = useState<{ posterUrl: string, rating: string, genre?: string, runtime?: string } | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -85,7 +90,7 @@ function FloatingWheelTooltip({ movie }: { movie: Movie }) {
           .then(r => r.json())
           .then(json => {
             if (!json.error && active) {
-              setData({ posterUrl: json.posterUrl, rating: json.rating });
+              setData({ posterUrl: json.posterUrl, rating: json.rating, genre: json.genre, runtime: json.runtime });
             }
           })
           .finally(() => {
@@ -113,6 +118,11 @@ function FloatingWheelTooltip({ movie }: { movie: Movie }) {
           <div className="bg-[#14181c] px-3 py-1 rounded-full text-[#ff8000] text-xs font-black tracking-widest mt-3 border border-[#2c3440]">
             {data.rating && data.rating !== 'N/A' ? data.rating : 'UNRATED'}
           </div>
+          {data.genre && data.genre !== 'N/A' && (
+            <div className="text-[9px] text-[#8aa8c1] font-bold uppercase tracking-widest mt-2 px-1 text-center leading-tight">
+              {data.genre} • {data.runtime}
+            </div>
+          )}
         </>
       )}
     </div>
@@ -123,7 +133,7 @@ export default function Home() {
   const [includeWatched, setIncludeWatched] = useState(false);
   const [poolType, setPoolType] = useState<'both' | 'watchlist' | 'top500'>('both');
   const [hoveredWheelIndex, setHoveredWheelIndex] = useState<number | null>(null);
-  const [winnerData, setWinnerData] = useState<{ posterUrl: string, rating: string } | null>(null);
+  const [winnerData, setWinnerData] = useState<{ posterUrl: string, rating: string, genre?: string, runtime?: string } | null>(null);
   const [loadingWinner, setLoadingWinner] = useState(false);
 
   const [localWatched, setLocalWatched] = useState<string[]>([]);
@@ -293,7 +303,7 @@ export default function Home() {
       fetch(`/api/movie?slug=${won.slug}`)
         .then(r => r.json())
         .then(data => {
-          if (!data.error) setWinnerData({ posterUrl: data.posterUrl, rating: data.rating });
+          if (!data.error) setWinnerData({ posterUrl: data.posterUrl, rating: data.rating, genre: data.genre, runtime: data.runtime });
         })
         .finally(() => setLoadingWinner(false));
     }
@@ -567,7 +577,12 @@ export default function Home() {
               )}
             </div>
 
-            <h2 className="text-3xl font-black text-white mb-6 leading-tight max-h-[100px] overflow-y-auto">{winner.title}</h2>
+            <h2 className="text-3xl font-black text-white mb-2 leading-tight max-h-[100px] overflow-y-auto">{winner.title}</h2>
+            {winnerData?.genre && winnerData.genre !== 'N/A' && (
+              <p className="text-[#8aa8c1] text-xs font-bold uppercase tracking-widest mb-6">
+                {winnerData.genre} • {winnerData.runtime}
+              </p>
+            )}
 
             <div className="flex flex-col gap-3">
               <a
