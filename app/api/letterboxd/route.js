@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import Papa from 'papaparse';
+import { kv } from '@vercel/kv';
 
 export async function GET() {
     try {
@@ -44,9 +45,25 @@ export async function GET() {
         const watched = readCSV('watched.csv');
         const top500 = readCSV('top500.csv');
 
-        console.log(`✅ Loaded: ${watchlist.length} watchlist, ${watched.length} watched, ${top500.length} top500`);
+        // Dynamically fetch user-submitted 'watched' movies from Vercel KV Storage
+        let dynamicWatched = [];
+        try {
+            // Only try if the Vercel KV env vars are roughly present (prevents local crashes)
+            if (process.env.KV_REST_API_URL || process.env.KV_URL) {
+                const kvData = await kv.get('global_watched_slugs');
+                if (Array.isArray(kvData)) {
+                    dynamicWatched = kvData;
+                }
+            }
+        } catch (e) {
+            console.warn("⚠️ Vercel KV gracefully skipped:", e.message);
+        }
 
-        return NextResponse.json({ watchlist, watched, top500 });
+        const allWatched = [...watched, ...dynamicWatched];
+
+        console.log(`✅ Loaded: ${watchlist.length} watchlist, ${allWatched.length} watched, ${top500.length} top500`);
+
+        return NextResponse.json({ watchlist, watched: allWatched, top500 });
     } catch (error) {
         console.error("CSV API Error:", error);
         return NextResponse.json({ error: "Failed to read CSV files" }, { status: 500 });

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import confetti from "canvas-confetti";
+import Papa from "papaparse";
 
 const Wheel = dynamic(
   () => import("react-custom-roulette").then((mod) => mod.Wheel),
@@ -127,6 +128,14 @@ export default function Home() {
 
   const [localWatched, setLocalWatched] = useState<string[]>([]);
 
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [markingGlobal, setMarkingGlobal] = useState(false);
+
+  const [isGuestMode, setIsGuestMode] = useState(false);
+  const [showGuestMenu, setShowGuestMenu] = useState(false);
+  const [guestWatchlist, setGuestWatchlist] = useState<Movie[]>([]);
+  const [guestWatched, setGuestWatched] = useState<Movie[]>([]);
+
   useEffect(() => {
     const stored = localStorage.getItem("letterbin_watched");
     if (stored) {
@@ -136,6 +145,7 @@ export default function Home() {
         console.error("Failed to parse localWatched", e);
       }
     }
+    if (sessionStorage.getItem("admin_password")) setIsAdmin(true);
   }, []);
 
   const [loading, setLoading] = useState(false);
@@ -154,6 +164,44 @@ export default function Home() {
     return shuffled.slice(0, count);
   };
 
+  const parseCSVFile = (file: File, callback: (parsedMovies: Movie[]) => void) => {
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results: any) => {
+        const movies = results.data.map((row: any) => {
+          const cleanRow: any = {};
+          Object.keys(row).forEach(key => cleanRow[key.trim()] = row[key]);
+          const title = cleanRow['Name'] || cleanRow['Title'] || "Unknown Movie";
+          const uri = cleanRow['Letterboxd URI'] || cleanRow['URL'] || "";
+          const slug = uri ? uri.split('/').filter(Boolean).pop() : title.toLowerCase().replace(/ /g, '-');
+          return { title, slug };
+        });
+        callback(movies);
+      }
+    });
+  };
+
+  const handleWatchlistUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      parseCSVFile(file, (movies) => {
+        setGuestWatchlist(movies);
+        setIsGuestMode(true);
+      });
+    }
+  };
+
+  const handleWatchedUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      parseCSVFile(file, (movies) => {
+        setGuestWatched(movies);
+        setIsGuestMode(true);
+      });
+    }
+  };
+
   const handleFetch = async () => {
     setLoading(true);
     setError("");
@@ -161,11 +209,17 @@ export default function Home() {
     setWinner(null);
 
     try {
-      const res = await fetch(`/api/letterboxd`);
-      if (!res.ok) throw new Error("Could not find CSV files in /data folder");
+      let serverData = { watchlist: [], watched: [], top500: [] };
+      try {
+          const res = await fetch(`/api/letterboxd`);
+          if (res.ok) serverData = await res.json();
+      } catch (e) {
+          console.warn("Failed to reach server DB, using local only");
+      }
 
-      const data = await res.json();
-      const { watchlist, watched, top500 } = data;
+      const watchlist = (isGuestMode && guestWatchlist.length > 0) ? guestWatchlist : serverData.watchlist;
+      const watched = isGuestMode ? guestWatched : serverData.watched;
+      const top500 = serverData.top500 || [];
 
       let baseList: Movie[] = [];
 
@@ -246,14 +300,45 @@ export default function Home() {
     });
   };
 
-  const handleWatched = () => {
+  const handleWatched = async () => {
     if (!winner) return;
     const updated = [...localWatched, winner.slug];
     setLocalWatched(updated);
     localStorage.setItem("letterbin_watched", JSON.stringify(updated));
+
+    const adminPwd = sessionStorage.getItem("admin_password");
+    if (adminPwd && !isGuestMode) {
+      setMarkingGlobal(true);
+      try {
+        const res = await fetch('/api/mark-watched', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slug: winner.slug, title: winner.title, password: adminPwd })
+        });
+        const data = await res.json();
+        if (data.error) alert("Database Error: " + data.error);
+      } catch (e) {
+         console.error(e);
+      }
+      setMarkingGlobal(false);
+    }
+    
     setShowModal(false);
-    // Remove from the wheel data immediately so we don't spin it again
     setWheelData(prev => prev.filter(item => item.option !== (winner.title.length > 22 ? winner.title.substring(0, 20) + "..." : winner.title)));
+  };
+
+  const handleAdminLogin = () => {
+    if (isAdmin) {
+        sessionStorage.removeItem("admin_password");
+        setIsAdmin(false);
+        return;
+    }
+    const pwd = prompt("Enter Admin Password to enable Global Cloud Syncing:");
+    if (pwd) {
+      sessionStorage.setItem("admin_password", pwd);
+      setIsAdmin(true);
+      alert("Admin Mode Unlocked!");
+    }
   };
 
   const handleWheelMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -313,7 +398,13 @@ export default function Home() {
       <header className="bg-[#1c2228] py-6 border-b border-[#2c3440]">
         <div className="max-w-5xl mx-auto px-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-white tracking-tighter">LETTERBIN 🍿</h1>
-          <span className="text-xs uppercase tracking-widest text-[#64788c]">Local CSV Mode</span>
+          <span 
+             onClick={handleAdminLogin}
+             className={`text-xs uppercase tracking-widest cursor-pointer transition-colors px-2 py-1 rounded ${isAdmin ? "text-[#00e054] hover:bg-[#00e054]/10" : "text-[#64788c] hover:text-white"}`}
+             title="Click to toggle Admin Mode"
+          >
+             {isAdmin ? "Admin Connected" : "Local CSV Mode"}
+          </span>
         </div>
       </header>
 
@@ -338,9 +429,34 @@ export default function Home() {
                   <option value="top500">Top 500 Only</option>
                 </select>
               </div>
-              <button onClick={handleFetch} disabled={loading} className="w-full bg-[#00e054] hover:bg-[#00c04b] text-[#14181c] font-black py-3 rounded transition-all uppercase text-xs tracking-widest">
+              <button onClick={handleFetch} disabled={loading} className="w-full bg-[#00e054] hover:bg-[#00c04b] text-[#14181c] font-black py-3 rounded transition-all uppercase text-xs tracking-widest mt-2">
                 {loading ? "Loading CSV..." : "Sync Movies"}
               </button>
+              
+              <button 
+                onClick={() => setShowGuestMenu(!showGuestMenu)}
+                className="w-full text-[#64788c] text-xs uppercase font-bold hover:text-white transition-colors py-2 flex items-center justify-center gap-2"
+              >
+                {showGuestMenu ? "Hide Guest Panel" : "📁 Upload Custom CSV (Guest Mode)"}
+              </button>
+              
+              {showGuestMenu && (
+                <div className="bg-[#14181c] p-4 rounded border border-[#00e054]/30 flex flex-col gap-4 shadow-inner">
+                  {isGuestMode && <div className="text-xs text-[#00e054] font-black uppercase tracking-widest text-center animate-pulse">Guest Profile Active</div>}
+                  <div>
+                    <label className="text-xs text-[#8aa8c1] block mb-2 font-bold uppercase tracking-wider">1. Watchlist CSV:</label>
+                    <input type="file" accept=".csv" onChange={handleWatchlistUpload} className="text-xs text-[#64788c] file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#2c3440] file:text-white hover:file:bg-[#445566]" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#8aa8c1] block mb-2 font-bold uppercase tracking-wider">2. Watched CSV (Opt):</label>
+                    <input type="file" accept=".csv" onChange={handleWatchedUpload} className="text-xs text-[#64788c] file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#2c3440] file:text-white hover:file:bg-[#445566]" />
+                  </div>
+                  {isGuestMode && (
+                     <button onClick={() => { setIsGuestMode(false); setGuestWatchlist([]); setGuestWatched([]); }} className="text-xs text-red-500 hover:text-red-400 font-bold uppercase tracking-widest text-center mt-2 p-2 border border-red-500/20 rounded">Exit Guest Mode</button>
+                  )}
+                </div>
+              )}
+              
               {error && <p className="text-red-400 text-xs mt-2">{error}</p>}
             </div>
           </div>
@@ -440,9 +556,10 @@ export default function Home() {
               </a>
               <button
                 onClick={handleWatched}
-                className="w-full bg-[#2c3440] text-white py-3 rounded hover:bg-[#ff8000] hover:text-[#14181c] transition-colors uppercase text-xs font-bold tracking-widest"
+                disabled={markingGlobal}
+                className="w-full bg-[#2c3440] text-white py-3 rounded hover:bg-[#ff8000] hover:text-[#14181c] transition-colors uppercase text-xs font-bold tracking-widest disabled:opacity-50"
               >
-                I have watched & reviewed this!
+                {markingGlobal ? "Syncing to Cloud..." : (isAdmin && !isGuestMode) ? "Save to Global Cloud DB" : "I have watched & reviewed this!"}
               </button>
               <button
                 onClick={() => setShowModal(false)}
