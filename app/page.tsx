@@ -211,10 +211,10 @@ export default function Home() {
     try {
       let serverData = { watchlist: [], watched: [], top500: [] };
       try {
-          const res = await fetch(`/api/letterboxd`);
-          if (res.ok) serverData = await res.json();
+        const res = await fetch(`/api/letterboxd`);
+        if (res.ok) serverData = await res.json();
       } catch (e) {
-          console.warn("Failed to reach server DB, using local only");
+        console.warn("Failed to reach server DB, using local only");
       }
 
       const watchlist = (isGuestMode && guestWatchlist.length > 0) ? guestWatchlist : serverData.watchlist;
@@ -311,27 +311,27 @@ export default function Home() {
       setMarkingGlobal(true);
       try {
         const res = await fetch('/api/mark-watched', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ slug: winner.slug, title: winner.title, password: adminPwd })
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug: winner.slug, title: winner.title, password: adminPwd })
         });
         const data = await res.json();
         if (data.error) alert("Database Error: " + data.error);
       } catch (e) {
-         console.error(e);
+        console.error(e);
       }
       setMarkingGlobal(false);
     }
-    
+
     setShowModal(false);
     setWheelData(prev => prev.filter(item => item.option !== (winner.title.length > 22 ? winner.title.substring(0, 20) + "..." : winner.title)));
   };
 
   const handleAdminLogin = () => {
     if (isAdmin) {
-        sessionStorage.removeItem("admin_password");
-        setIsAdmin(false);
-        return;
+      sessionStorage.removeItem("admin_password");
+      setIsAdmin(false);
+      return;
     }
     const pwd = prompt("Enter Admin Password to enable Global Cloud Syncing:");
     if (pwd) {
@@ -384,7 +384,7 @@ export default function Home() {
 
     if (index < 0) index = (index % wheelData.length) + wheelData.length;
     if (index >= wheelData.length) index %= wheelData.length;
-    index = index - 22;
+    index = index - 18;
 
     setHoveredWheelIndex(index);
   };
@@ -398,12 +398,12 @@ export default function Home() {
       <header className="bg-[#1c2228] py-6 border-b border-[#2c3440]">
         <div className="max-w-5xl mx-auto px-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-white tracking-tighter">dxobrettel 🍿</h1>
-          <span 
-             onClick={handleAdminLogin}
-             className={`text-xs uppercase tracking-widest cursor-pointer transition-colors px-2 py-1 rounded ${isAdmin ? "text-[#00e054] hover:bg-[#00e054]/10" : "text-[#64788c] hover:text-white"}`}
-             title="Click to toggle Admin Mode"
+          <span
+            onClick={handleAdminLogin}
+            className={`text-xs uppercase tracking-widest cursor-pointer transition-colors px-2 py-1 rounded ${isAdmin ? "text-[#00e054] hover:bg-[#00e054]/10" : "text-[#64788c] hover:text-white"}`}
+            title="Click to toggle Admin Mode"
           >
-             {isAdmin ? "Admin Connected" : "Local CSV Mode"}
+            {isAdmin ? "Admin Connected" : "Local CSV Mode"}
           </span>
         </div>
       </header>
@@ -419,8 +419,8 @@ export default function Home() {
               </label>
               <div className="flex flex-col gap-2 mt-2">
                 <label className="text-xs text-[#64788c] uppercase font-bold tracking-widest mb-1">Movie Pool Mode</label>
-                <select 
-                  value={poolType} 
+                <select
+                  value={poolType}
                   onChange={(e) => setPoolType(e.target.value as any)}
                   className="bg-[#2c3440] text-sm text-white p-2.5 rounded border border-[#445566] focus:border-[#00e054] outline-none shadow-inner"
                 >
@@ -432,14 +432,14 @@ export default function Home() {
               <button onClick={handleFetch} disabled={loading} className="w-full bg-[#00e054] hover:bg-[#00c04b] text-[#14181c] font-black py-3 rounded transition-all uppercase text-xs tracking-widest mt-2">
                 {loading ? "Loading CSV..." : "Sync Movies"}
               </button>
-              
-              <button 
+
+              <button
                 onClick={() => setShowGuestMenu(!showGuestMenu)}
                 className="w-full text-[#64788c] text-xs uppercase font-bold hover:text-white transition-colors py-2 flex items-center justify-center gap-2"
               >
                 {showGuestMenu ? "Hide Guest Panel" : "📁 Upload Custom CSV (Guest Mode)"}
               </button>
-              
+
               {showGuestMenu && (
                 <div className="bg-[#14181c] p-4 rounded border border-[#00e054]/30 flex flex-col gap-4 shadow-inner">
                   {isGuestMode && <div className="text-xs text-[#00e054] font-black uppercase tracking-widest text-center animate-pulse">Guest Profile Active</div>}
@@ -452,11 +452,11 @@ export default function Home() {
                     <input type="file" accept=".csv" onChange={handleWatchedUpload} className="text-xs text-[#64788c] file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#2c3440] file:text-white hover:file:bg-[#445566]" />
                   </div>
                   {isGuestMode && (
-                     <button onClick={() => { setIsGuestMode(false); setGuestWatchlist([]); setGuestWatched([]); }} className="text-xs text-red-500 hover:text-red-400 font-bold uppercase tracking-widest text-center mt-2 p-2 border border-red-500/20 rounded">Exit Guest Mode</button>
+                    <button onClick={() => { setIsGuestMode(false); setGuestWatchlist([]); setGuestWatched([]); }} className="text-xs text-red-500 hover:text-red-400 font-bold uppercase tracking-widest text-center mt-2 p-2 border border-red-500/20 rounded">Exit Guest Mode</button>
                   )}
                 </div>
               )}
-              
+
               {error && <p className="text-red-400 text-xs mt-2">{error}</p>}
             </div>
           </div>
