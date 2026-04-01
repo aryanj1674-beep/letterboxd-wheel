@@ -137,7 +137,7 @@ export default function Home() {
   const [guestWatched, setGuestWatched] = useState<Movie[]>([]);
 
   useEffect(() => {
-    const stored = localStorage.getItem("letterbin_watched");
+    const stored = localStorage.getItem("dxobrettel_watched");
     if (stored) {
       try {
         setLocalWatched(JSON.parse(stored));
@@ -304,7 +304,7 @@ export default function Home() {
     if (!winner) return;
     const updated = [...localWatched, winner.slug];
     setLocalWatched(updated);
-    localStorage.setItem("letterbin_watched", JSON.stringify(updated));
+    localStorage.setItem("dxobrettel_watched", JSON.stringify(updated));
 
     const adminPwd = sessionStorage.getItem("admin_password");
     if (adminPwd && !isGuestMode) {
@@ -397,7 +397,7 @@ export default function Home() {
     <div className="min-h-screen bg-[#14181c] text-[#8aa8c1] font-sans pb-20">
       <header className="bg-[#1c2228] py-6 border-b border-[#2c3440]">
         <div className="max-w-5xl mx-auto px-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-white tracking-tighter">LETTERBIN 🍿</h1>
+          <h1 className="text-2xl font-bold text-white tracking-tighter">dxobrettel 🍿</h1>
           <span 
              onClick={handleAdminLogin}
              className={`text-xs uppercase tracking-widest cursor-pointer transition-colors px-2 py-1 rounded ${isAdmin ? "text-[#00e054] hover:bg-[#00e054]/10" : "text-[#64788c] hover:text-white"}`}
