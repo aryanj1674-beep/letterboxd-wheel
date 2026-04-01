@@ -174,7 +174,14 @@ export default function Home() {
           Object.keys(row).forEach(key => cleanRow[key.trim()] = row[key]);
           const title = cleanRow['Name'] || cleanRow['Title'] || "Unknown Movie";
           const uri = cleanRow['Letterboxd URI'] || cleanRow['URL'] || "";
-          const slug = uri ? uri.split('/').filter(Boolean).pop() : title.toLowerCase().replace(/ /g, '-');
+          
+          let slug = '';
+          if (uri && uri.includes('letterboxd.com/film/')) {
+              slug = uri.split('/').filter(Boolean).pop();
+          } else {
+              slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+          }
+          
           return { title, slug };
         });
         callback(movies);

@@ -34,8 +34,14 @@ export async function GET() {
                 const title = cleanRow['Name'] || cleanRow['Title'] || "Unknown Movie";
                 const uri = cleanRow['Letterboxd URI'] || cleanRow['URL'] || "";
                 
-                // Extract slug from the end of the URL
-                const slug = uri ? uri.split('/').filter(Boolean).pop() : title.toLowerCase().replace(/ /g, '-');
+                // Extract slug: If it's a full letterboxd URL, pop it. 
+                // If it's a boxd.it shortlink, we must guess the slug from the title using exact Letterboxd formatting rules
+                let slug = '';
+                if (uri && uri.includes('letterboxd.com/film/')) {
+                    slug = uri.split('/').filter(Boolean).pop();
+                } else {
+                    slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                }
 
                 return { title, slug };
             });
