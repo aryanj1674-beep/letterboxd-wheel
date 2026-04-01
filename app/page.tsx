@@ -397,7 +397,7 @@ export default function Home() {
     let offset = 23; 
     
     if (poolType === 'watchlist') {
-      offset = 21*wheelData.length/100;   // <--- CHANGE THIS NUMBER for Watchlist (e.g. 1, 2, 5, etc)
+      offset = Math.round(21*wheelData.length/200);   // <--- Wrapped in Math.round so it doesn't break the array indexing!
     } else if (poolType === 'top500') {
       offset = 21;  // <--- CHANGE THIS NUMBER for Top 500
     } else if (poolType === 'both') {
