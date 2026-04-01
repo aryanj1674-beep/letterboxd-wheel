@@ -120,7 +120,7 @@ function FloatingWheelTooltip({ movie }: { movie: Movie }) {
 
 export default function Home() {
   const [includeWatched, setIncludeWatched] = useState(false);
-  const [onlyWatchlist, setOnlyWatchlist] = useState(false);
+  const [poolType, setPoolType] = useState<'both' | 'watchlist' | 'top500'>('both');
   const [hoveredWheelIndex, setHoveredWheelIndex] = useState<number | null>(null);
   const [winnerData, setWinnerData] = useState<{ posterUrl: string, rating: string } | null>(null);
   const [loadingWinner, setLoadingWinner] = useState(false);
@@ -169,8 +169,10 @@ export default function Home() {
 
       let baseList: Movie[] = [];
 
-      if (onlyWatchlist) {
+      if (poolType === 'watchlist') {
         baseList = [...watchlist];
+      } else if (poolType === 'top500') {
+        baseList = [...top500];
       } else {
         baseList = [...top500, ...watchlist];
       }
@@ -183,10 +185,10 @@ export default function Home() {
         return true;
       });
 
-      // Filter out watched
       if (!includeWatched) {
         const watchedSlugs = new Set(watched.map((m: any) => m.slug));
-        baseList = baseList.filter(m => !watchedSlugs.has(m.slug));
+        const watchedTitles = new Set(watched.map((m: any) => m.title.toLowerCase().trim()));
+        baseList = baseList.filter(m => !watchedSlugs.has(m.slug) && !watchedTitles.has(m.title.toLowerCase().trim()));
       }
 
       // Filter out manually marked as watched (localWatched)
@@ -324,10 +326,18 @@ export default function Home() {
                 <input type="checkbox" checked={includeWatched} onChange={(e) => setIncludeWatched(e.target.checked)} className="accent-[#00e054] w-4 h-4" />
                 <span className="text-sm group-hover:text-white transition-colors">Include Watched</span>
               </label>
-              <label className="flex items-center gap-3 cursor-pointer group">
-                <input type="checkbox" checked={onlyWatchlist} onChange={(e) => setOnlyWatchlist(e.target.checked)} className="accent-[#00e054] w-4 h-4" />
-                <span className="text-sm group-hover:text-white transition-colors">Only Watchlist</span>
-              </label>
+              <div className="flex flex-col gap-2 mt-2">
+                <label className="text-xs text-[#64788c] uppercase font-bold tracking-widest mb-1">Movie Pool Mode</label>
+                <select 
+                  value={poolType} 
+                  onChange={(e) => setPoolType(e.target.value as any)}
+                  className="bg-[#2c3440] text-sm text-white p-2.5 rounded border border-[#445566] focus:border-[#00e054] outline-none shadow-inner"
+                >
+                  <option value="both">Both (Watchlist + Top 500)</option>
+                  <option value="watchlist">Watchlist Only</option>
+                  <option value="top500">Top 500 Only</option>
+                </select>
+              </div>
               <button onClick={handleFetch} disabled={loading} className="w-full bg-[#00e054] hover:bg-[#00c04b] text-[#14181c] font-black py-3 rounded transition-all uppercase text-xs tracking-widest">
                 {loading ? "Loading CSV..." : "Sync Movies"}
               </button>
