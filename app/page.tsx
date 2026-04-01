@@ -391,7 +391,24 @@ export default function Home() {
 
     if (index < 0) index = (index % wheelData.length) + wheelData.length;
     if (index >= wheelData.length) index %= wheelData.length;
-    index = index - 23;
+
+    // --- HOVER MAPPING CALIBRATION OFFSETS ---
+    // You can adjust these numbers to perfectly align the tooltip for each specific pool!
+    let offset = 23; 
+    
+    if (poolType === 'watchlist') {
+      offset = 23*wheelData.length/100;   // <--- CHANGE THIS NUMBER for Watchlist (e.g. 1, 2, 5, etc)
+    } else if (poolType === 'top500') {
+      offset = 23;  // <--- CHANGE THIS NUMBER for Top 500
+    } else if (poolType === 'both') {
+      offset = 23;  // <--- CHANGE THIS NUMBER for Both
+    }
+    
+    // Applying the calibration
+    index = index - offset;
+    
+    // Safety check just in case the offset makes the index go below 0
+    if (index < 0) index = (index % wheelData.length) + wheelData.length;
 
     setHoveredWheelIndex(index);
   };
