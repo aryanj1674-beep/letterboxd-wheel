@@ -146,6 +146,10 @@ export default function Home() {
   const [guestWatchlist, setGuestWatchlist] = useState<Movie[]>([]);
   const [guestWatched, setGuestWatched] = useState<Movie[]>([]);
 
+  // TMDB Runtime Filtering Bounds
+  const [minRuntime, setMinRuntime] = useState<number>(0);
+  const [maxRuntime, setMaxRuntime] = useState<number>(300);
+
   useEffect(() => {
     const stored = localStorage.getItem("dxobrettel_watched");
     if (stored) {
@@ -271,6 +275,36 @@ export default function Home() {
       if (baseList.length === 0) {
         throw new Error("No movies found! Ensure your CSVs have data and 'Name' columns.");
       }
+
+      // --- TMDB RUNTIME FILTERING ENGINE ---
+      // We only run the engine if the user has actually restricted the bounds
+      if (minRuntime > 0 || maxRuntime < 300) {
+        const payload = baseList.map(m => ({ slug: m.slug, title: m.title }));
+        try {
+          const runtimesRes = await fetch('/api/runtimes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ movies: payload })
+          });
+          const runtimesMap = await runtimesRes.json();
+
+          if (!runtimesMap.error) {
+            baseList = baseList.filter(m => {
+              const rTime = runtimesMap[m.slug];
+              // If TMDB couldn't find it (-1) or cache missed (0), we allow it by default so it doesn't disappear unfairly
+              if (!rTime || rTime <= 0) return true;
+              return rTime >= minRuntime && rTime <= maxRuntime;
+            });
+          }
+        } catch (tmdbError) {
+          console.warn("TMDB filtering pipeline failed, skipping runtime filter.", tmdbError);
+        }
+      }
+      
+      if (baseList.length === 0) {
+        throw new Error("Zero movies matched your Runtime Filter limits! Expand your slider.");
+      }
+      // -------------------------------------
 
       const toSpin = getRandomSelection(baseList, Math.min(100, baseList.length));
       setChosenMovies(toSpin);
@@ -462,6 +496,34 @@ export default function Home() {
                   <option value="watchlist">Watchlist Only</option>
                   <option value="top500">Top 500 Only</option>
                 </select>
+              </div>
+              
+              <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-[#2c3440]">
+                <label className="text-xs text-[#64788c] uppercase font-bold tracking-widest flex justify-between">
+                  <span>Min Runtime</span>
+                  <span className="text-[#00e054]">{minRuntime} mins</span>
+                </label>
+                <input 
+                  type="range" 
+                  min="0" max="300" step="5"
+                  value={minRuntime} 
+                  onChange={(e) => setMinRuntime(Number(e.target.value))}
+                  className="w-full accent-[#00e054] cursor-pointer h-1.5 bg-[#2c3440] rounded-lg appearance-none"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2 mb-4">
+                <label className="text-xs text-[#64788c] uppercase font-bold tracking-widest flex justify-between">
+                  <span>Max Runtime</span>
+                  <span className="text-[#00e054]">{maxRuntime >= 300 ? 'Any' : maxRuntime + ' mins'}</span>
+                </label>
+                <input 
+                  type="range" 
+                  min="0" max="300" step="5"
+                  value={maxRuntime} 
+                  onChange={(e) => setMaxRuntime(Math.max(Number(e.target.value), minRuntime))}
+                  className="w-full accent-[#00e054] cursor-pointer h-1.5 bg-[#2c3440] rounded-lg appearance-none"
+                />
               </div>
               <button onClick={handleFetch} disabled={loading} className="w-full bg-[#00e054] hover:bg-[#00c04b] text-[#14181c] font-black py-3 rounded transition-all uppercase text-xs tracking-widest mt-2">
                 {loading ? "Loading CSV..." : "Sync Movies"}
