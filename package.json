@@ -6,10 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "scrape": "node scripts/scrape_letterboxd.js",
-    "scrape:ts": "ts-node scripts/scrape_letterboxd.ts",
-    "scrape:dry": "ts-node scripts/scrape_letterboxd.ts --dry-run"
+    "lint": "eslint"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
@@ -37,7 +34,5 @@
     "eslint-config-next": "16.2.1",
     "tailwindcss": "^4",
     "typescript": "^5"
-    ,
-    "ts-node": "^10"
   }
 }
