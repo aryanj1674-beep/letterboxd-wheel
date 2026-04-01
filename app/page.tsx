@@ -384,7 +384,7 @@ export default function Home() {
 
     if (index < 0) index = (index % wheelData.length) + wheelData.length;
     if (index >= wheelData.length) index %= wheelData.length;
-    index = index - 18;
+    index = index - 23;
 
     setHoveredWheelIndex(index);
   };
